@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/stanleymw/ftls/protocol"
+	"github.com/stanleymw/ftls/internal/protocol"
 )
 
 func main() {
@@ -16,7 +16,6 @@ func main() {
 
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
 
 	conf := &tls.Config{
@@ -28,7 +27,6 @@ func main() {
 
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
 
 	defer ln.Close()
@@ -66,19 +64,35 @@ func handleConnection(conn net.Conn) {
 
 		switch recv {
 		case protocol.GET_SERVER_INFO:
-			writer.Encode(protocol.FtlsResponse{Body: "Test data transmission"})
+			writer.Encode(protocol.Response{Body: "Test data transmission"})
+
+		case protocol.GET_DIRECTORY_LIST:
+			read, _ := os.ReadDir(".")
+			var ret []string
+			for _, i := range read {
+				ret = append(ret, i.Name())
+			}
+
+			log.Print(writer.Encode(ret))
+
+		case protocol.GET_CURRENT_DIRECTORY:
+			dir, _ := os.Getwd()
+
+			log.Print(writer.Encode(dir))
+
 		case protocol.CLOSE_CONNECTION:
 			return
+
 		case protocol.RETRIEVE_FILE:
-			file, _ := os.Open("data4.txt")
+			file, _ := os.Open("data.txt")
+			defer file.Close()
 			fio := bufio.NewReader(file)
 
 			stat, _ := file.Stat()
 
-			z := protocol.FtlsFile{Size: stat.Size()}
+			// z := protocol.File{Size: stat.Size(), Name: stat.Name(), IsDir: stat.IsDir()}
 
-			log.Println(z)
-			writer.Encode(z)
+			log.Println(writer.Encode(stat))
 
 			fio.WriteTo(conn)
 			log.Print("File sent!")

@@ -1,17 +1,19 @@
 package protocol
 
-// import "os"
-
-type FtlsRequest struct {
+type Request struct {
 	Opcode byte
 }
 
-type FtlsResponse struct {
+type DirList []File
+
+type Response struct {
 	Body string
 }
 
-type FtlsFile struct {
-	Size int64
+type File struct {
+	Name  string
+	IsDir bool
+	Size  int64
 }
 
 const (
